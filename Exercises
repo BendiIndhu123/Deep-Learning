@@ -168,3 +168,327 @@ results = model.evaluate(x_test, y_test)
 results
 
 model.predict(x_test)
+
+
+
+#4
+from tensorflow.keras.datasets import boston_housing
+(train_data, train_targets), (test_data, test_targets) = boston_housing.load_data()
+train_data.shape
+test_data.shape
+train_targets
+mean = train_data.mean(axis=0)
+train_data -= mean
+std = train_data.std(axis=0)
+train_data /= std
+test_data -= mean
+test_data /= std
+print(train_data.shape)
+print(test_data.shape)
+def build_model():
+    model = keras.Sequential([
+        layers.Dense(64, activation="relu"),
+        layers.Dense(64, activation="relu"),
+        layers.Dense(1)
+    ])
+    model.compile(optimizer="rmsprop", loss="mse", metrics=["mae"])
+    return model
+import numpy as np
+import tensorflow as tf
+from tensorflow import keras
+from tensorflow.keras import layers
+k = 4
+num_val_samples = len(train_data) // k
+num_epochs = 100
+all_scores = []
+for i in range(k):
+    print(f"Processing fold #{i}")
+    val_data = train_data[i * num_val_samples: (i + 1) * num_val_samples]
+    val_targets = train_targets[i * num_val_samples: (i + 1) * num_val_samples]
+    partial_train_data = np.concatenate(
+        [train_data[:i * num_val_samples],
+         train_data[(i + 1) * num_val_samples:]],
+        axis=0)
+    partial_train_targets = np.concatenate(
+        [train_targets[:i * num_val_samples],
+         train_targets[(i + 1) * num_val_samples:]],
+        axis=0)
+    print(partial_train_data.shape)
+    print(partial_train_targets.shape)
+    model = build_model()
+    model.fit(partial_train_data, partial_train_targets,
+              epochs=num_epochs, batch_size=16, verbose=0)
+    val_mse, val_mae = model.evaluate(val_data, val_targets, verbose=0)
+    all_scores.append(val_mae)
+import numpy as np
+import tensorflow as tf
+from tensorflow import keras
+from tensorflow.keras import layers
+
+k = 4
+num_val_samples = len(train_data) // k
+num_epochs = 100
+all_scores = []
+
+for i in range(k):
+    print(f"Processing fold #{i}")
+
+    # Splitting validation and training data
+    val_data = train_data[i * num_val_samples: (i + 1) * num_val_samples]
+    val_targets = train_targets[i * num_val_samples: (i + 1) * num_val_samples]
+
+    partial_train_data = np.concatenate(
+        [train_data[:i * num_val_samples], train_data[(i + 1) * num_val_samples:]],
+        axis=0
+    )
+    partial_train_targets = np.concatenate(
+        [train_targets[:i * num_val_samples], train_targets[(i + 1) * num_val_samples:]],
+        axis=0
+    )
+
+    print("Training data shape:", partial_train_data.shape)
+    print("Training targets shape:", partial_train_targets.shape)
+
+    # Build the model
+    model = build_model()  # Ensure build_model() returns a compiled model
+
+    # Train the model
+    history = model.fit(partial_train_data, partial_train_targets,
+                        epochs=num_epochs, batch_size=16, verbose=0,
+                        validation_data=(val_data, val_targets))
+
+    # Evaluate the model on validation data
+    # The model.evaluate function returns only loss and mae, so we unpack into two variables.
+    val_loss, val_mae = model.evaluate(val_data, val_targets, verbose=0)
+
+    print(f"Fold {i} - Loss: {val_loss:.4f}, MAE: {val_mae:.4f}") # Removed Accuracy as it's not calculated.
+
+    all_scores.append({"Loss": val_loss, "MAE": val_mae}) # Removed Accuracy from the dictionary
+
+# Print average scores across all folds
+avg_loss = np.mean([score["Loss"] for score in all_scores])
+avg_mae = np.mean([score["MAE"] for score in all_scores])
+
+
+print(f"\nAverage Results - Loss: {avg_loss:.4f}, MAE: {avg_mae:.4f}") # Removed Accuracy as it's not calculated.
+all_scores
+np.mean(all_scores)
+num_epochs = 500
+all_mae_histories = []
+for i in range(k):
+    print(f"Processing fold #{i}")
+    val_data = train_data[i * num_val_samples: (i + 1) * num_val_samples]
+    val_targets = train_targets[i * num_val_samples: (i + 1) * num_val_samples]
+    partial_train_data = np.concatenate(
+        [train_data[:i * num_val_samples],
+         train_data[(i + 1) * num_val_samples:]],
+        axis=0)
+    partial_train_targets = np.concatenate(
+        [train_targets[:i * num_val_samples],
+         train_targets[(i + 1) * num_val_samples:]],
+        axis=0)
+    model = build_model()
+    history = model.fit(partial_train_data, partial_train_targets,
+                        validation_data=(val_data, val_targets),
+                        epochs=num_epochs, batch_size=16, verbose=0)
+    mae_history = history.history["val_mae"]
+    all_mae_histories.append(mae_history)
+average_mae_history = [
+    np.mean([x[i] for x in all_mae_histories]) for i in range(num_epochs)]
+import matplotlib.pyplot as plt
+plt.plot(range(1, len(average_mae_history) + 1), average_mae_history)
+plt.xlabel("Epochs")
+plt.ylabel("Validation MAE")
+plt.show()
+model = build_model()
+model.fit(train_data, train_targets,
+          epochs=130, batch_size=16, verbose=0)
+truncated_mae_history = average_mae_history[10:]
+plt.plot(range(1, len(truncated_mae_history) + 1), truncated_mae_history)
+plt.xlabel("Epochs")
+plt.ylabel("Validation MAE")
+plt.show()
+# Evaluate the model on test data
+evaluation_results = model.evaluate(test_data, test_targets, verbose=0)
+
+# Access the loss and MAE values from the evaluation results using their indices
+test_mse_score = evaluation_results[0]  # Loss is typically the first element
+test_mae_score = evaluation_results[1]  # MAE is typically the second element
+test_mae_score
+test_mse_score
+predictions = model.predict(test_data)
+predictions[0]
+
+#5
+import keras
+keras.__version__
+from keras.datasets import imdb
+import numpy as np
+
+(train_data, train_labels), (test_data, test_labels) = imdb.load_data(num_words=10000)
+
+def vectorize_sequences(sequences, dimension=10000):
+    # Create an all-zero matrix of shape (len(sequences), dimension)
+    results = np.zeros((len(sequences), dimension))
+    for i, sequence in enumerate(sequences):
+        results[i, sequence] = 1.  # set specific indices of results[i] to 1s
+    return results
+
+# Our vectorized training data
+x_train = vectorize_sequences(train_data)
+# Our vectorized test data
+x_test = vectorize_sequences(test_data)
+# Our vectorized labels
+y_train = np.asarray(train_labels).astype('float32')
+y_test = np.asarray(test_labels).astype('float32')
+from keras import models
+from keras import layers
+
+original_model = models.Sequential()
+original_model.add(layers.Dense(16, activation='relu', input_shape=(10000,)))
+original_model.add(layers.Dense(16, activation='relu'))
+original_model.add(layers.Dense(1, activation='sigmoid'))
+
+original_model.compile(optimizer='rmsprop',
+                       loss='binary_crossentropy',
+                       metrics=['acc'])
+smaller_model = models.Sequential()
+smaller_model.add(layers.Dense(4, activation='relu', input_shape=(10000,)))
+smaller_model.add(layers.Dense(4, activation='relu'))
+smaller_model.add(layers.Dense(1, activation='sigmoid'))
+
+smaller_model.compile(optimizer='rmsprop',
+                      loss='binary_crossentropy',
+                      metrics=['acc'])
+original_hist = original_model.fit(x_train, y_train,
+                                   epochs=20,
+                                   batch_size=512,
+                                   validation_data=(x_test, y_test))
+smaller_model_hist = smaller_model.fit(x_train, y_train,
+                                       epochs=20,
+                                       batch_size=512,
+                                       validation_data=(x_test, y_test))
+
+epochs = range(1, 21)
+original_val_loss = original_hist.history['val_loss']
+smaller_model_val_loss = smaller_model_hist.history['val_loss']
+import matplotlib.pyplot as plt
+
+# b+ is for "blue cross"
+plt.plot(epochs, original_val_loss, 'b+', label='Original model')
+# "bo" is for "blue dot"
+plt.plot(epochs, smaller_model_val_loss, 'bo', label='Smaller model')
+plt.xlabel('Epochs')
+plt.ylabel('Validation loss')
+plt.legend()
+
+plt.show()
+bigger_model = models.Sequential()
+bigger_model.add(layers.Dense(512, activation='relu', input_shape=(10000,)))
+bigger_model.add(layers.Dense(512, activation='relu'))
+bigger_model.add(layers.Dense(1, activation='sigmoid'))
+
+bigger_model.compile(optimizer='rmsprop',
+                     loss='binary_crossentropy',
+                     metrics=['acc'])
+bigger_model_hist = bigger_model.fit(x_train, y_train,
+                                     epochs=20,
+                                     batch_size=512,
+                                     validation_data=(x_test, y_test))
+bigger_model_val_loss = bigger_model_hist.history['val_loss']
+
+plt.plot(epochs, original_val_loss, 'b+', label='Original model')
+plt.plot(epochs, bigger_model_val_loss, 'bo', label='Bigger model')
+plt.xlabel('Epochs')
+plt.ylabel('Validation loss')
+plt.legend()
+original_train_loss = original_hist.history['loss']
+bigger_model_train_loss = bigger_model_hist.history['loss']
+
+plt.plot(epochs, original_train_loss, 'b+', label='Original model')
+plt.plot(epochs, bigger_model_train_loss, 'bo', label='Bigger model')
+plt.xlabel('Epochs')
+plt.ylabel('Training loss')
+plt.legend()
+
+plt.show()
+from keras import regularizers
+
+l2_model = models.Sequential()
+l2_model.add(layers.Dense(16, kernel_regularizer=regularizers.l2(0.001),
+                          activation='relu', input_shape=(10000,)))
+l2_model.add(layers.Dense(16, kernel_regularizer=regularizers.l2(0.001),
+                          activation='relu'))
+l2_model.add(layers.Dense(1, activation='sigmoid'))
+l2_model.compile(optimizer='rmsprop',
+                 loss='binary_crossentropy',
+                 metrics=['acc'])
+l2_model_hist = l2_model.fit(x_train, y_train,
+                             epochs=20,
+                             batch_size=512,
+                             validation_data=(x_test, y_test))
+l2_model_val_loss = l2_model_hist.history['val_loss']
+
+plt.plot(epochs, original_val_loss, 'b+', label='Original model')
+plt.plot(epochs, l2_model_val_loss, 'bo', label='L2-regularized model')
+plt.xlabel('Epochs')
+plt.ylabel('Validation loss')
+plt.legend()
+
+plt.show()
+from keras import regularizers
+
+# L1 regularization
+regularizers.l1(0.001)
+
+# L1 and L2 regularization at the same time
+regularizers.l1_l2(l1=0.001, l2=0.001)
+import numpy as np
+
+# Assume layer_output is the output of a layer, you need to define it first. 
+# Example: let's assume layer_output is a 2D array
+layer_output = np.array([[1, 2, 3], [4, 5, 6]])  
+
+# At training time: we drop out 50% of the units in the output
+# Use np.random.randint instead of np.randint
+layer_output *= np.random.randint(0, high=2, size=layer_output.shape) 
+print(layer_output)
+layer_output = layer_output.astype(float) * 0.5
+# At training time:
+layer_output *= np.random.randint(0, high=2, size=layer_output.shape) # Use np.random.randint instead of np.randint
+# Note that we are scaling *up* rather scaling *down* in this case
+layer_output /= 0.5
+from keras import models
+from keras import layers
+
+# Define the model
+model = models.Sequential()
+
+# Add your desired layers here 
+# ... (e.g., Dense layers, etc.)
+
+# Add the Dropout layer
+model.add(layers.Dropout(0.5))
+dpt_model = models.Sequential()
+dpt_model.add(layers.Dense(16, activation='relu', input_shape=(10000,)))
+dpt_model.add(layers.Dropout(0.5))
+dpt_model.add(layers.Dense(16, activation='relu'))
+dpt_model.add(layers.Dropout(0.5))
+dpt_model.add(layers.Dense(1, activation='sigmoid'))
+
+dpt_model.compile(optimizer='rmsprop',
+                  loss='binary_crossentropy',
+                  metrics=['acc'])
+dpt_model_hist = dpt_model.fit(x_train, y_train,
+                               epochs=20,
+                               batch_size=512,
+                               validation_data=(x_test, y_test))
+dpt_model_val_loss = dpt_model_hist.history['val_loss']
+
+plt.plot(epochs, original_val_loss, 'b+', label='Original model')
+plt.plot(epochs, dpt_model_val_loss, 'bo', label='Dropout-regularized model')
+plt.xlabel('Epochs')
+plt.ylabel('Validation loss')
+plt.legend()
+
+plt.show()
